@@ -35,7 +35,7 @@ BEGIN
         WHERE tc.tipo_cambio_id = @tipo_cambio_id AND tc.moneda_id = @moneda_id;
 
         -- Actualizar cantidad
-        WAITFOR DELAY '00:00:10'
+        WAITFOR DELAY '00:00:01'
         UPDATE pp
         SET cantidad = pp.cantidad - @cantidad
         FROM productos_producidos pp
@@ -62,4 +62,4 @@ BEGIN
     END CATCH
 END
 
-EXEC InsertarVentas 2 ,13, 510.12, '2023-04-09',1,1;
+EXEC InsertarVentas 2 ,2, 510.12, '2023-04-09',1,1;

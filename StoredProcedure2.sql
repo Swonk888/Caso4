@@ -9,8 +9,8 @@ CREATE PROCEDURE ProducirProductos
     @cantidad INT,
     @posttime DATETIME,
     @user_id SMALLINT,
-    @producto_id SMALLINT
-    --@contrato_id SMALLINT
+    @producto_id SMALLINT,
+    @contrato_id SMALLINT
 AS
 BEGIN
     SET NOCOUNT ON; -- do not return metadata
@@ -29,11 +29,11 @@ BEGIN
 
     BEGIN TRY
         SET @CustomError = 2001;
-        SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id; /*and contrato_id = @contrato_id*/;
+        SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id and contrato_id = @contrato_id;
         WAITFOR DELAY '00:00:10'
         UPDATE productos_producidos
         SET cantidad = @CantAct + @cantidad
-        WHERE producto_id = @producto_id; -- and contrato_id = @contrato_id;
+        WHERE producto_id = @producto_id and contrato_id = @contrato_id;
 
         IF @InicieTransaccion = 1 BEGIN
             COMMIT;
@@ -55,10 +55,16 @@ END;
 GO
 
 -- Call the stored procedure to insert the data
-DECLARE @cantidad INT = 32;
+DECLARE @cantidad INT = 5;
 DECLARE @posttime DATETIME = '2023-05-20';
 DECLARE @user_id SMALLINT = 2;
 DECLARE @producto_id SMALLINT = 2;
---DECLARE @contrato_id SMALLINT = 10;
+DECLARE @contrato_id SMALLINT = 10;
 
-EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id/*, @contrato_id*/;
+EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_id;
+
+--select * from productos_producidos;
+--select * from ventas;
+--delete from ventas where venta_id>0;
+--DBCC CHECKIDENT(ventas, RESEED, 0);
+--update productos_producidos set cantidad = 30 where producto_id = 2;
