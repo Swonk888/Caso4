@@ -68,3 +68,13 @@ EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_i
 --delete from ventas where venta_id>0;
 --DBCC CHECKIDENT(ventas, RESEED, 0);
 --update productos_producidos set cantidad = 30 where producto_id = 2;
+
+/* Puede ocurrir un lost update entre esta transaccion y la transaccion de registrar ventas.
+Cuando registrar ventas actualiza la cantidad de productos en el inventario,
+la transaccion de agregar productos producidos puede estar sumando a dicha cantidad.
+El error ocurre cuando la creacion de productos le suma a la cantidad que hay en la base de datos,
+y al mismo tiempo ocurren una venta del mismo producto. La venta reduce la cantidad del producto 
+pero la produccion de productos nuevos le suma a la cantidad previa a la venta. Causando
+el error de lost update*/
+
+/* Nueva Version*/

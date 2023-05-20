@@ -59,7 +59,8 @@ BEGIN
 		SET @ErrorState = ERROR_STATE()
 		SET @Message = ERROR_MESSAGE()
 
-		IF @InicieTransaccion=1 BEGIN
+
+		IF @InicieTransaccion=1  BEGIN
 			ROLLBACK
 		END
 		RAISERROR('%s - Error Number: %i',
@@ -76,7 +77,7 @@ DECLARE @misVentas AS VentasTVP;
 -- Rellenar la variable de tabla con los datos de venta
 INSERT INTO @misVentas (producto_id, cantidad, precioUnitario, fecha, moneda_id, tipo_cambio_id)
 VALUES
-    (2, 5, 510.12, '2023-05-20', 1, 1);
+    (2, 10, 510.12, GETDATE(), 1, 1);
 
 -- Llamar al stored procedure para insertar las ventas
 EXEC InsertarVentas @ventasTVP = @misVentas;
