@@ -14,11 +14,23 @@ CREATE PROCEDURE InsertarVentas
     @ventasTVP AS VentasTVP READONLY
 AS
 BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        BEGIN TRANSACTION;
+    SET NOCOUNT ON -- no retorne metadatos
 
-        -- Insertar ventas
+	DECLARE @ErrorNumber INT, @ErrorSeverity INT, @ErrorState INT, @CustomError INT
+	DECLARE @Message VARCHAR(200)
+	DECLARE @InicieTransaccion BIT
+
+	SET @InicieTransaccion = 0
+	IF @@TRANCOUNT=0 BEGIN
+		SET @InicieTransaccion = 1
+		SET TRANSACTION ISOLATION LEVEL READ COMMITTED
+		BEGIN TRANSACTION
+	END
+
+	BEGIN TRY
+		SET @CustomError = 2001
+
+		-- Insertar ventas
         INSERT INTO ventas (venta_id, producto_id, monto, fecha, cantidad, moneda_id, tipo_cambio_id)
         SELECT v.venta_id, v.producto_id, (v.cantidad * v.precioUnitario * tc.tipo_Cambio), v.fecha , v.cantidad, v.moneda_id, v.tipo_cambio_id
         FROM @ventasTVP v
@@ -30,14 +42,25 @@ BEGIN
         FROM productos_producidos pp
         INNER JOIN @ventasTVP v ON pp.producto_id = v.producto_id;
 
-        COMMIT;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0
-            ROLLBACK;
-        THROW;
-    END CATCH;
-END;
+		IF @InicieTransaccion=1 BEGIN
+			COMMIT
+		END
+	END TRY
+	BEGIN CATCH
+		SET @ErrorNumber = ERROR_NUMBER()
+		SET @ErrorSeverity = ERROR_SEVERITY()
+		SET @ErrorState = ERROR_STATE()
+		SET @Message = ERROR_MESSAGE()
+
+		IF @InicieTransaccion=1 BEGIN
+			ROLLBACK
+		END
+		RAISERROR('%s - Error Number: %i',
+			@ErrorSeverity, @ErrorState, @Message, @CustomError)
+	END CATCH
+END
+RETURN 0
+GO
 
 -- Para hacer inserts al TVP
 /*
