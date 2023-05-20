@@ -1,80 +1,64 @@
-use caso3;
+USE caso3;
+GO
+
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'ProducirProductos')
     DROP PROCEDURE ProducirProductos;
 GO
-IF EXISTS (SELECT * FROM sys.table_types WHERE name = 'ProductosTVP')
-    DROP TYPE ProductosTVP;
-GO
-
-CREATE TYPE ProductosTVP AS TABLE
-(
-    cantidad INT,
-    posttime DATETIME,
-    user_id SMALLINT,
-    producto_id SMALLINT
-    --contrato_id SMALLINT
-);
-GO
 
 CREATE PROCEDURE ProducirProductos
-    @productosTVP AS ProductosTVP READONLY
+    @cantidad INT,
+    @posttime DATETIME,
+    @user_id SMALLINT,
+    @producto_id SMALLINT
+    --@contrato_id SMALLINT
 AS
 BEGIN
-    SET NOCOUNT ON -- no retorne metadatos
+    SET NOCOUNT ON; -- do not return metadata
 
-	DECLARE @ErrorNumber INT, @ErrorSeverity INT, @ErrorState INT, @CustomError INT
-	DECLARE @Message VARCHAR(200)
-	DECLARE @InicieTransaccion BIT
+    DECLARE @ErrorNumber INT, @ErrorSeverity INT, @ErrorState INT, @CustomError INT;
+    DECLARE @Message VARCHAR(200);
+    DECLARE @InicieTransaccion BIT;
+    DECLARE @CantAct INT;
 
-	SET @InicieTransaccion = 0
-	IF @@TRANCOUNT=0 BEGIN
-		SET @InicieTransaccion = 1
-		SET TRANSACTION ISOLATION LEVEL READ COMMITTED
-		BEGIN TRANSACTION
-	END
+    SET @InicieTransaccion = 0;
+    IF @@TRANCOUNT = 0 BEGIN
+        SET @InicieTransaccion = 1;
+        SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+        BEGIN TRANSACTION;
+    END;
 
-	BEGIN TRY
-		SET @CustomError = 2001
+    BEGIN TRY
+        SET @CustomError = 2001;
+        SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id; /*and contrato_id = @contrato_id*/;
+        WAITFOR DELAY '00:00:10'
+        UPDATE productos_producidos
+        SET cantidad = @CantAct + @cantidad
+        WHERE producto_id = @producto_id; -- and contrato_id = @contrato_id;
 
-        UPDATE pp
-        SET cantidad = pp.cantidad + p.cantidad
-        FROM productos_producidos pp
-        INNER JOIN @productosTVP p ON pp.producto_id = p.producto_id /*and pp.contrato_id = p.contrato_id*/;
+        IF @InicieTransaccion = 1 BEGIN
+            COMMIT;
+        END;
+    END TRY
+    BEGIN CATCH
+        SET @ErrorNumber = ERROR_NUMBER();
+        SET @ErrorSeverity = ERROR_SEVERITY();
+        SET @ErrorState = ERROR_STATE();
+        SET @Message = ERROR_MESSAGE();
 
-		IF @InicieTransaccion=1 BEGIN
-			COMMIT
-		END
-	END TRY
-	BEGIN CATCH
-		SET @ErrorNumber = ERROR_NUMBER()
-		SET @ErrorSeverity = ERROR_SEVERITY()
-		SET @ErrorState = ERROR_STATE()
-		SET @Message = ERROR_MESSAGE()
-
-		IF @InicieTransaccion=1 BEGIN
-			ROLLBACK
-		END
-		RAISERROR('%s - Error Number: %i',
-			@ErrorSeverity, @ErrorState, @Message, @CustomError)
-	END CATCH
-END
-RETURN 0
+        IF @InicieTransaccion = 1 BEGIN
+            ROLLBACK;
+        END;
+        RAISERROR('%s - Error Number: %i',
+            @ErrorSeverity, @ErrorState, @Message, @CustomError);
+    END CATCH;
+END;
 GO
 
--- Para hacer inserts al TVP
+-- Call the stored procedure to insert the data
+DECLARE @cantidad INT = 32;
+DECLARE @posttime DATETIME = '2023-05-20';
+DECLARE @user_id SMALLINT = 2;
+DECLARE @producto_id SMALLINT = 2;
+--DECLARE @contrato_id SMALLINT = 10;
 
-DECLARE @misProductos AS ProductosTVP;
-
--- Rellenar la variable de tabla con los datos de venta
-INSERT INTO @misProductos (cantidad, posttime, user_id, producto_id)
-VALUES
-    (32,'2023-05-20', 2, 2);
-
--- Llamar al stored procedure para insertar las ventas
-EXEC ProducirProductos @productosTVP = @misProductos;
-
-
-
-/*select * from productos_producidos
-DBCC CHECKIDENT ('ventas', RESEED, 0);
-DELETE from ventas where venta_id>0;*/
+EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id/*, @contrato_id*/;
