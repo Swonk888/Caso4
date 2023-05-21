@@ -1,7 +1,7 @@
 USE caso3;
 GO
 
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'ProducirProductos')
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'CancelarProd')
     DROP PROCEDURE CancelarProd;
 GO
 
@@ -20,7 +20,7 @@ BEGIN
     SET @InicieTransaccion = 0;
     IF @@TRANCOUNT = 0 BEGIN
         SET @InicieTransaccion = 1;
-        SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+        SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
         BEGIN TRANSACTION;
     END;
 
@@ -61,7 +61,7 @@ EXEC CancelarProd @recolectorID, @prodID;
 --select * from recolectores;
 --delete from ventas where venta_id>0;
 --DBCC CHECKIDENT(ventas, RESEED, 0);
---update productos_producidos set cantidad = 30 where producto_id = 2;
+--update productos_producidos set cantidad = 200 where producto_id = 2;
 --ROLLBACK;
 
 /* En este caso, corriendo este transaction simultaneamente con insertar ventas (sp1)

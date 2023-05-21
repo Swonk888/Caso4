@@ -103,7 +103,7 @@ DECLARE @misVentas AS VentasTVP;
 -- Rellenar la variable de tabla con los datos de venta
 INSERT INTO @misVentas (producto_id, cantidad, precioUnitario, fecha, moneda_id, tipo_cambio_id)
 VALUES
-    (2, 10, 510.12, GETDATE(), 1, 1);
+    (2, 1, 510.12, GETDATE(), 1, 1);
 
 -- Llamar al stored procedure para insertar las ventas
 EXEC InsertarVentas @ventasTVP = @misVentas;
@@ -111,7 +111,8 @@ EXEC InsertarVentas @ventasTVP = @misVentas;
 
 
 /*
-select * from ventas
+select * from ventas;
+select * from recolectores;
 DBCC CHECKIDENT ('ventas', RESEED, 0);
 DELETE from ventas where venta_id>0;
 ROLLBACK;
