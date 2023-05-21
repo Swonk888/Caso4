@@ -25,7 +25,8 @@ BEGIN
     DECLARE @ErrorNumber INT, @ErrorSeverity INT, @ErrorState INT, @CustomError INT
     DECLARE @Message VARCHAR(200)
     DECLARE @InicieTransaccion BIT
-	DECLARE @Total DECIMAL(10,2)
+    DECLARE @Contrato_id SMALLINT
+    DECLARE @Recolector_id SMALLINT
 
     SET @InicieTransaccion = 0
     IF @@TRANCOUNT = 0 BEGIN
@@ -43,7 +44,24 @@ BEGIN
         FROM @ventasTVP v
         INNER JOIN tipo_cambio tc ON v.tipo_cambio_id = tc.tipo_cambio_id AND v.moneda_id = tc.moneda_id;
 
-		SELECT @Total = monto from ventas where ventas.venta_id = (select MAX(venta_id) from ventas)
+        SELECT @Contrato_id = pp.contrato_id
+        FROM productos_producidos pp
+        INNER JOIN @ventasTVP v ON pp.producto_id = v.producto_id;
+
+        SELECT @Recolector_id = c.recolector_id
+        FROM contrato c WHERE c.contrato_id = @Contrato_id
+
+        -- Actualizar balance en la tabla recolectores
+        UPDATE recolectores
+        SET balance = balance + ((v.cantidad * v.precioUnitario * tc.tipo_Cambio - proceso.costo) * contrato.porcentaje)
+        FROM recolectores r
+        INNER JOIN contrato ON contrato.recolector_id = r.recolector_id
+        INNER JOIN productos_producidos pp ON pp.contrato_id = contrato.contrato_id
+        INNER JOIN @ventasTVP v ON v.producto_id = pp.producto_id
+        INNER JOIN tipo_cambio tc ON tc.tipo_cambio_id = v.tipo_cambio_id AND tc.moneda_id = v.moneda_id
+        INNER JOIN proceso ON proceso.contrato_id = contrato.contrato_id
+        WHERE r.recolector_id = @Recolector_id;
+
 
         -- Actualizar cantidad
         UPDATE pp
@@ -52,7 +70,6 @@ BEGIN
         INNER JOIN @ventasTVP v ON pp.producto_id = v.producto_id;
 
         WAITFOR DELAY '00:00:05'
-
 
         -- Validate available quantity
         IF EXISTS (SELECT * FROM productos_producidos WHERE cantidad < 0)
@@ -80,18 +97,19 @@ BEGIN
             @ErrorSeverity, @ErrorState, @Message, @CustomError)
     END CATCH
 END
-Return 0
-Go
+
 
 DECLARE @misVentas AS VentasTVP;
 
 -- Rellenar la variable de tabla con los datos de venta
 INSERT INTO @misVentas (producto_id, cantidad, precioUnitario, fecha, moneda_id, tipo_cambio_id)
 VALUES
-    (4, 1, 510.12, GETDATE(), 1, 1);
+    (2, 10, 510.12, GETDATE(), 1, 1);
 
 -- Llamar al stored procedure para insertar las ventas
 EXEC InsertarVentas @ventasTVP = @misVentas;
+
+
 
 /*select * from ventas
 DBCC CHECKIDENT ('ventas', RESEED, 0);
