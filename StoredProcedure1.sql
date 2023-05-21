@@ -44,14 +44,22 @@ BEGIN
         FROM @ventasTVP v
         INNER JOIN tipo_cambio tc ON v.tipo_cambio_id = tc.tipo_cambio_id AND v.moneda_id = tc.moneda_id;
 
-        SELECT @Contrato_id = pp.contrato_id
+        -- Actualizar cantidad
+        UPDATE pp
+        SET cantidad = pp.cantidad - v.cantidad
+        FROM productos_producidos pp
+        INNER JOIN @ventasTVP v ON pp.producto_id = v.producto_id;
+
+        WAITFOR DELAY '00:00:06'
+
+		SELECT @Contrato_id = pp.contrato_id
         FROM productos_producidos pp
         INNER JOIN @ventasTVP v ON pp.producto_id = v.producto_id;
 
         SELECT @Recolector_id = c.recolector_id
         FROM contrato c WHERE c.contrato_id = @Contrato_id
 
-        -- Actualizar balance en la tabla recolectores
+		-- Actualizar balance en la tabla recolectores
         UPDATE recolectores
         SET balance = balance + ((v.cantidad * v.precioUnitario * tc.tipo_Cambio - proceso.costo) * contrato.porcentaje)
         FROM recolectores r
@@ -61,15 +69,6 @@ BEGIN
         INNER JOIN tipo_cambio tc ON tc.tipo_cambio_id = v.tipo_cambio_id AND tc.moneda_id = v.moneda_id
         INNER JOIN proceso ON proceso.contrato_id = contrato.contrato_id
         WHERE r.recolector_id = @Recolector_id;
-
-
-        -- Actualizar cantidad
-        UPDATE pp
-        SET cantidad = pp.cantidad - v.cantidad
-        FROM productos_producidos pp
-        INNER JOIN @ventasTVP v ON pp.producto_id = v.producto_id;
-
-        WAITFOR DELAY '00:00:05'
 
         -- Validate available quantity
         IF EXISTS (SELECT * FROM productos_producidos WHERE cantidad < 0)
@@ -111,7 +110,10 @@ EXEC InsertarVentas @ventasTVP = @misVentas;
 
 
 
-/*select * from ventas
+/*
+select * from ventas
 DBCC CHECKIDENT ('ventas', RESEED, 0);
-DELETE from ventas where venta_id>0;*/
+DELETE from ventas where venta_id>0;
+ROLLBACK;
+*/
 
