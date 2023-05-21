@@ -69,7 +69,7 @@ EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_i
 --DBCC CHECKIDENT(ventas, RESEED, 0);
 --update productos_producidos set cantidad = 30 where producto_id = 2;
 
-/* Puede ocurrir un lost update entre esta transaccion y la transaccion de registrar ventas.
+/* Puede ocurrir un lost update entre esta transaccion y la transaccion de registrar ventas.(sp1)
 Cuando registrar ventas actualiza la cantidad de productos en el inventario,
 la transaccion de agregar productos producidos puede estar sumando a dicha cantidad.
 El error ocurre cuando la creacion de productos le suma a la cantidad que hay en la base de datos,

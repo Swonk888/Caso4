@@ -23,14 +23,13 @@ BEGIN
     SET @InicieTransaccion = 0;
     IF @@TRANCOUNT = 0 BEGIN
         SET @InicieTransaccion = 1;
-        SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+        SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
         BEGIN TRANSACTION;
     END;
 
     BEGIN TRY
         SET @CustomError = 2001;
         SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id and contrato_id = @contrato_id;
-        WAITFOR DELAY '00:00:05'
         UPDATE productos_producidos
         SET cantidad = @CantAct + @cantidad
         WHERE producto_id = @producto_id and contrato_id = @contrato_id;
@@ -55,7 +54,7 @@ END;
 GO
 
 -- Call the stored procedure to insert the data
-DECLARE @cantidad INT = 5;
+DECLARE @cantidad INT = 3;
 DECLARE @posttime DATETIME = '2023-05-20';
 DECLARE @user_id SMALLINT = 2;
 DECLARE @producto_id SMALLINT = 2;
@@ -69,3 +68,9 @@ EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_i
 --DBCC CHECKIDENT(ventas, RESEED, 0);
 --update productos_producidos set cantidad = 30 where producto_id = 2;
 
+
+/* En este caso, corriendo este transaction simultaneamente con insertar ventas (sp1)
+cuando en insertar ventas ocurre un rollback por cualquier error, la transaccion 
+de agregar productos lee y utiliza los datos antes de que el rollback ocurra causando un 
+dirty read, donde no se toma en cuenta que insertar ventas realmente no ocurrió
+*/

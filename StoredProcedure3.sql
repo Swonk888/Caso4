@@ -15,6 +15,7 @@ BEGIN
     DECLARE @ErrorNumber INT, @ErrorSeverity INT, @ErrorState INT, @CustomError INT;
     DECLARE @Message VARCHAR(200);
     DECLARE @InicieTransaccion BIT;
+	Declare @Total INT;
 
     SET @InicieTransaccion = 0;
     IF @@TRANCOUNT = 0 BEGIN
@@ -28,7 +29,9 @@ BEGIN
         SELECT *
         FROM ventas 
         WHERE fecha >= @RangoInicial and fecha <= @RangoFinal
-        WAITFOR DELAY '00:00:05'
+		SELECT @Total = sum(monto) from ventas;
+		PRINT Cast(@Total as varchar(10));
+        WAITFOR DELAY '00:00:06'
         IF @InicieTransaccion = 1 BEGIN
             COMMIT;
         END;
@@ -53,7 +56,7 @@ DECLARE @RangoInicial DATETIME = '2023-05-01';
 DECLARE @RangoFinal DATETIME = '2023-05-31';
 
 EXEC VentasRango @RangoInicial, @RangoFinal;
-
+WAITFOR DELAY '00:00:03'
 EXEC VentasRango @RangoInicial, @RangoFinal;
 
 --select * from productos_producidos;
@@ -62,5 +65,9 @@ EXEC VentasRango @RangoInicial, @RangoFinal;
 --DBCC CHECKIDENT(ventas, RESEED, 0);
 --update productos_producidos set cantidad = 30 where producto_id = 2;
 
-
-
+/*Aqui ocurre un phantom read. Esto es porque la transaccion VentaRango
+lee las ventas y devuelve todas las ventas que ocurrieron en un mes dado, tambien
+sumando el monto ganado en dicho mes. Al mismo tiempo la transaccion de ventas inserta 
+una venta nueva que cumple con el rango de fechas, cambiando el resultado que 
+retorna VentaRango. La segunda vez que se corre VentaRango, se lee la nueva venta 
+creando un 'Phantom' en la segunda lectura.

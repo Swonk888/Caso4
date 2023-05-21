@@ -25,6 +25,7 @@ BEGIN
     DECLARE @ErrorNumber INT, @ErrorSeverity INT, @ErrorState INT, @CustomError INT
     DECLARE @Message VARCHAR(200)
     DECLARE @InicieTransaccion BIT
+	DECLARE @Total DECIMAL(10,2)
 
     SET @InicieTransaccion = 0
     IF @@TRANCOUNT = 0 BEGIN
@@ -42,6 +43,8 @@ BEGIN
         FROM @ventasTVP v
         INNER JOIN tipo_cambio tc ON v.tipo_cambio_id = tc.tipo_cambio_id AND v.moneda_id = tc.moneda_id;
 
+		SELECT @Total = monto from ventas where ventas.venta_id = (select MAX(venta_id) from ventas)
+
         -- Actualizar cantidad
         UPDATE pp
         SET cantidad = pp.cantidad - v.cantidad
@@ -49,6 +52,7 @@ BEGIN
         INNER JOIN @ventasTVP v ON pp.producto_id = v.producto_id;
 
         WAITFOR DELAY '00:00:05'
+
 
         -- Validate available quantity
         IF EXISTS (SELECT * FROM productos_producidos WHERE cantidad < 0)
@@ -76,19 +80,18 @@ BEGIN
             @ErrorSeverity, @ErrorState, @Message, @CustomError)
     END CATCH
 END
-
+Return 0
+Go
 
 DECLARE @misVentas AS VentasTVP;
 
 -- Rellenar la variable de tabla con los datos de venta
 INSERT INTO @misVentas (producto_id, cantidad, precioUnitario, fecha, moneda_id, tipo_cambio_id)
 VALUES
-    (2, 10, 510.12, GETDATE(), 1, 1);
+    (4, 1, 510.12, GETDATE(), 1, 1);
 
 -- Llamar al stored procedure para insertar las ventas
 EXEC InsertarVentas @ventasTVP = @misVentas;
-
-
 
 /*select * from ventas
 DBCC CHECKIDENT ('ventas', RESEED, 0);
