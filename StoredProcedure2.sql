@@ -134,14 +134,4 @@ BEGIN
     END CATCH;
 END;
 GO
-
--- Call the stored procedure to insert the data
-DECLARE @cantidad INT = 5;
-DECLARE @posttime DATETIME = '2023-05-20';
-DECLARE @user_id SMALLINT = 2;
-DECLARE @producto_id SMALLINT = 2;
-DECLARE @contrato_id SMALLINT = 10;
-
-EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_id;
-
 */

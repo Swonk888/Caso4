@@ -134,7 +134,7 @@ DECLARE @misVentas AS VentasTVP;
 -- Rellenar la variable de tabla con los datos de venta
 INSERT INTO @misVentas (producto_id, cantidad, precioUnitario, fecha, moneda_id, tipo_cambio_id)
 VALUES
-    (2, 1, 510.12, GETDATE(), 1, 1);
+    (2, 3, 510.12, GETDATE(), 1, 1);
 
 -- Llamar al stored procedure para insertar las ventas
 EXEC InsertarVentas @ventasTVP = @misVentas;

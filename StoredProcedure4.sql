@@ -29,6 +29,7 @@ BEGIN
 
     BEGIN TRY
         SET @CustomError = 2001;
+		WAITFOR DELAY '00:00:05'
         SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id and contrato_id = @contrato_id;
         UPDATE productos_producidos
         SET cantidad = @CantAct + @cantidad
@@ -54,7 +55,7 @@ END;
 GO
 
 -- Call the stored procedure to insert the data
-DECLARE @cantidad INT = 3;
+DECLARE @cantidad INT = 8;
 DECLARE @posttime DATETIME = '2023-05-20';
 DECLARE @user_id SMALLINT = 2;
 DECLARE @producto_id SMALLINT = 2;
@@ -66,7 +67,7 @@ EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_i
 --select * from ventas;
 --delete from ventas where venta_id>0;
 --DBCC CHECKIDENT(ventas, RESEED, 0);
---update productos_producidos set cantidad = 30 where producto_id = 2;
+--update productos_producidos set cantidad = 2 where producto_id = 2;
 
 
 /* En este caso, corriendo este transaction simultaneamente con insertar ventas (sp1)
