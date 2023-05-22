@@ -72,5 +72,5 @@ EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_i
 /* En este caso, corriendo este transaction simultaneamente con insertar ventas (sp1)
 cuando en insertar ventas ocurre un rollback por cualquier error, la transaccion 
 de agregar productos lee y utiliza los datos antes de que el rollback ocurra causando un 
-dirty read, donde no se toma en cuenta que insertar ventas realmente no ocurrió
+dirty read, donde no se toma en cuenta que insertar ventas realmente no ocurriï¿½
 */
