@@ -74,6 +74,8 @@ retorna VentaRango. La segunda vez que se corre VentaRango, se lee la nueva vent
 creando un 'Phantom' en la segunda lectura*/
 
 /*Nueva version
+Aplicamos un isolation level serializable para eleminar el phantom
+
 GO
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'VentasRango')
     DROP PROCEDURE VentasRango;

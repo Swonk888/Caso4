@@ -77,6 +77,9 @@ pero la produccion de productos nuevos le suma a la cantidad previa a la venta. 
 el error de lost update*/
 
 /* Nueva Version
+La solucion de un lost update en este caso seria aplicar el isolation level
+serializable junto con UPDLOCK, HOLDLOCK en la tabla.
+
 GO
 
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'ProducirProductos')
