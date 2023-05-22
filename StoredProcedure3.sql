@@ -20,7 +20,7 @@ BEGIN
     SET @InicieTransaccion = 0;
     IF @@TRANCOUNT = 0 BEGIN
         SET @InicieTransaccion = 1;
-        SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+		SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
         BEGIN TRANSACTION;
     END;
 
@@ -31,7 +31,12 @@ BEGIN
         WHERE fecha >= @RangoInicial and fecha <= @RangoFinal
 		SELECT @Total = sum(monto) from ventas;
 		PRINT Cast(@Total as varchar(10));
-        WAITFOR DELAY '00:00:06'
+        WAITFOR DELAY '00:00:07'
+		SELECT *
+        FROM ventas 
+        WHERE fecha >= @RangoInicial and fecha <= @RangoFinal
+		SELECT @Total = sum(monto) from ventas;
+		PRINT Cast(@Total as varchar(10));
         IF @InicieTransaccion = 1 BEGIN
             COMMIT;
         END;
@@ -56,8 +61,8 @@ DECLARE @RangoInicial DATETIME = '2023-05-01';
 DECLARE @RangoFinal DATETIME = '2023-05-31';
 
 EXEC VentasRango @RangoInicial, @RangoFinal;
-WAITFOR DELAY '00:00:03'
-EXEC VentasRango @RangoInicial, @RangoFinal;
+--WAITFOR DELAY '00:00:03'
+--EXEC VentasRango @RangoInicial, @RangoFinal;
 
 --select * from productos_producidos;
 --select * from ventas;
@@ -70,4 +75,6 @@ lee las ventas y devuelve todas las ventas que ocurrieron en un mes dado, tambie
 sumando el monto ganado en dicho mes. Al mismo tiempo la transaccion de ventas inserta 
 una venta nueva que cumple con el rango de fechas, cambiando el resultado que 
 retorna VentaRango. La segunda vez que se corre VentaRango, se lee la nueva venta 
-creando un 'Phantom' en la segunda lectura.
+creando un 'Phantom' en la segunda lectura.*/
+
+/*

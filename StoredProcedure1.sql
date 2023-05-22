@@ -53,7 +53,6 @@ BEGIN
 
         WAITFOR DELAY '00:00:05'
 
-
         -- Validate available quantity
         IF EXISTS (SELECT * FROM productos_producidos WHERE cantidad < 0)
         BEGIN
@@ -88,7 +87,7 @@ DECLARE @misVentas AS VentasTVP;
 -- Rellenar la variable de tabla con los datos de venta
 INSERT INTO @misVentas (producto_id, cantidad, precioUnitario, fecha, moneda_id, tipo_cambio_id)
 VALUES
-    (4, 1, 510.12, GETDATE(), 1, 1);
+    (2, 4, 510.12, GETDATE(), 1, 1);
 
 -- Llamar al stored procedure para insertar las ventas
 EXEC InsertarVentas @ventasTVP = @misVentas;

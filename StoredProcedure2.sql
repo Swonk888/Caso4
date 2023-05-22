@@ -23,14 +23,14 @@ BEGIN
     SET @InicieTransaccion = 0;
     IF @@TRANCOUNT = 0 BEGIN
         SET @InicieTransaccion = 1;
-        SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+        SET TRANSACTION ISOLATION LEVEL READ COMMITTED
         BEGIN TRANSACTION;
     END;
 
     BEGIN TRY
         SET @CustomError = 2001;
         SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id and contrato_id = @contrato_id;
-        WAITFOR DELAY '00:00:10'
+        WAITFOR DELAY '00:00:06'
         UPDATE productos_producidos
         SET cantidad = @CantAct + @cantidad
         WHERE producto_id = @producto_id and contrato_id = @contrato_id;
@@ -67,7 +67,7 @@ EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_i
 --select * from ventas;
 --delete from ventas where venta_id>0;
 --DBCC CHECKIDENT(ventas, RESEED, 0);
---update productos_producidos set cantidad = 30 where producto_id = 2;
+--update productos_producidos set cantidad = 100 where producto_id = 2;
 
 /* Puede ocurrir un lost update entre esta transaccion y la transaccion de registrar ventas.(sp1)
 Cuando registrar ventas actualiza la cantidad de productos en el inventario,
