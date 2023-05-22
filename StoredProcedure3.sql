@@ -77,4 +77,62 @@ una venta nueva que cumple con el rango de fechas, cambiando el resultado que
 retorna VentaRango. La segunda vez que se corre VentaRango, se lee la nueva venta 
 creando un 'Phantom' en la segunda lectura.*/
 
+/* El phantom se puede solucinar aplicando un set transaction isolation
+level serializable*/
+
 /*
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'VentasRango')
+    DROP PROCEDURE VentasRango;
+GO
+
+CREATE PROCEDURE VentasRango
+    @RangoInicial DATETIME,
+    @RangoFinal DATETIME
+AS
+BEGIN
+    SET NOCOUNT ON; -- do not return metadata
+
+    DECLARE @ErrorNumber INT, @ErrorSeverity INT, @ErrorState INT, @CustomError INT;
+    DECLARE @Message VARCHAR(200);
+    DECLARE @InicieTransaccion BIT;
+	Declare @Total INT;
+
+    SET @InicieTransaccion = 0;
+    IF @@TRANCOUNT = 0 BEGIN
+        SET @InicieTransaccion = 1;
+		SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+        BEGIN TRANSACTION;
+    END;
+
+    BEGIN TRY
+        SET @CustomError = 2001;
+        SELECT *
+        FROM ventas 
+        WHERE fecha >= @RangoInicial and fecha <= @RangoFinal
+		SELECT @Total = sum(monto) from ventas;
+		PRINT Cast(@Total as varchar(10));
+        WAITFOR DELAY '00:00:07'
+		SELECT *
+        FROM ventas 
+        WHERE fecha >= @RangoInicial and fecha <= @RangoFinal
+		SELECT @Total = sum(monto) from ventas;
+		PRINT Cast(@Total as varchar(10));
+        IF @InicieTransaccion = 1 BEGIN
+            COMMIT;
+        END;
+    END TRY
+    BEGIN CATCH
+        SET @ErrorNumber = ERROR_NUMBER();
+        SET @ErrorSeverity = ERROR_SEVERITY();
+        SET @ErrorState = ERROR_STATE();
+        SET @Message = ERROR_MESSAGE();
+
+        IF @InicieTransaccion = 1 BEGIN
+            ROLLBACK;
+        END;
+        RAISERROR('%s - Error Number: %i',
+            @ErrorSeverity, @ErrorState, @Message, @CustomError);
+    END CATCH;
+END;
+GO
+*/
