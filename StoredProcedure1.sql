@@ -1,5 +1,5 @@
-use prueba;
-
+use caso3;
+GO
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'InsertarVentas')
     DROP PROCEDURE InsertarVentas;
 GO
@@ -27,6 +27,7 @@ BEGIN
     DECLARE @InicieTransaccion BIT
     DECLARE @Contrato_id SMALLINT
     DECLARE @Recolector_id SMALLINT
+    DECLARE @Actor_id SMALLINT;
 
     SET @InicieTransaccion = 0
     IF @@TRANCOUNT = 0 BEGIN
@@ -62,6 +63,33 @@ BEGIN
         INNER JOIN proceso ON proceso.contrato_id = contrato.contrato_id
         WHERE r.recolector_id = @Recolector_id;
 
+        DECLARE actores_cursor CURSOR FOR
+        SELECT ac.actor_id
+        FROM actores_x_contrato ac
+        INNER JOIN actores a ON ac.actor_id = a.actor_id
+        WHERE ac.contrato_id = @Contrato_id;
+
+        OPEN actores_cursor;
+        FETCH NEXT FROM actores_cursor INTO @Actor_id;
+
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            -- Actualizar el balance de cada actor
+            UPDATE actores
+            SET balance = balance + ((v.cantidad * v.precioUnitario * tc.tipo_Cambio - proceso.costo) * axc.porcentaje)
+            FROM actores a
+            INNER JOIN actores_x_contrato axc ON axc.actor_id = a.actor_id
+            INNER JOIN productos_producidos pp ON pp.contrato_id = axc.contrato_id
+            INNER JOIN @ventasTVP v ON v.producto_id = pp.producto_id
+            INNER JOIN tipo_cambio tc ON tc.tipo_cambio_id = v.tipo_cambio_id AND tc.moneda_id = v.moneda_id
+            INNER JOIN proceso ON proceso.contrato_id = axc.contrato_id
+            WHERE a.actor_id = @Actor_id;
+
+            FETCH NEXT FROM actores_cursor INTO @Actor_id;
+        END;
+
+        CLOSE actores_cursor;
+        DEALLOCATE actores_cursor;
 
         -- Actualizar cantidad
         UPDATE pp
@@ -116,6 +144,9 @@ EXEC InsertarVentas @ventasTVP = @misVentas;
 /*select * from ventas
 select * from productos_producidos
 select* from recolectores;
+select* from actores_x_contrato;
+select* from actores;
+
 DBCC CHECKIDENT ('ventas', RESEED, 0);
 DELETE from ventas where venta_id>=0;
 UPDATE productos_producidos set cantidad =  50 where producto_id=2;
