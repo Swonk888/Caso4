@@ -79,7 +79,7 @@ dirty read, donde no se toma en cuenta que insertar ventas realmente no ocurriï¿
 /*Una solucion es aplicarle al codigo un set transaction
 isolation level read commited*/
 
-/*
+/*Nueva Version
 GO
 
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'ProducirProductos')

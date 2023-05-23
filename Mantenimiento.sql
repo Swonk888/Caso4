@@ -1,23 +1,8 @@
-use caso3;
-GO
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'InsertarVentas')
-    DROP PROCEDURE InsertarVentas;
-GO
-IF EXISTS (SELECT * FROM sys.table_types WHERE name = 'VentasTVP')
-    DROP TYPE VentasTVP;
-GO
-CREATE TYPE VentasTVP AS TABLE
-(
-    producto_id INT,
-    cantidad INT,
-    precioUnitario DECIMAL(10, 2),
-    fecha DATE,
-    moneda_id INT,
-    tipo_cambio_id INT
-);
-GO
-CREATE PROCEDURE InsertarVentas
+--a) Encriptado
+
+ALTER PROCEDURE InsertarVentas
     @ventasTVP AS VentasTVP READONLY
+	WITH ENCRYPTION
 AS
 BEGIN
     SET NOCOUNT ON -- do not return metadata
@@ -71,6 +56,7 @@ BEGIN
 
         OPEN actores_cursor;
         FETCH NEXT FROM actores_cursor INTO @Actor_id;
+
         WHILE @@FETCH_STATUS = 0
         BEGIN
             -- Actualizar el balance de cada actor
@@ -128,26 +114,53 @@ BEGIN
 END
 GO
 
-DECLARE @misVentas AS VentasTVP;
+SELECT O.name, M.definition, O.type_desc, O.type 
+FROM sys.sql_modules M 
+INNER JOIN sys.objects O ON M.object_id=O.object_id 
+WHERE O.type IN ('P');
+GO
 
--- Rellenar la variable de tabla con los datos de venta
-INSERT INTO @misVentas (producto_id, cantidad, precioUnitario, fecha, moneda_id, tipo_cambio_id)
-VALUES
-    (2, 3, 510.12, GETDATE(), 1, 1);
+sp_HelpText InsertarVentas;
 
--- Llamar al stored procedure para insertar las ventas
-EXEC InsertarVentas @ventasTVP = @misVentas;
+Go
+
+--b) Schemahowbinding
+
+IF OBJECT_ID('dbo.VistaContratoProceso', 'V') IS NOT NULL
+    DROP VIEW dbo.VistaContratoProceso;
+GO
+
+CREATE VIEW VistaContratoProceso 
+WITH SCHEMABINDING 
+AS
+SELECT dbo.contrato.descripcion, dbo.proceso.proceso_id, dbo.proceso.clasificacion, dbo.desecho_movimientos.posttime, dbo.desecho_movimientos.responsible_name, dbo.desecho_movimientos.reci_desecho_cantidad, 
+                  dbo.ubicaciones.descripcion AS Expr1, dbo.paises.nombre, dbo.productores_residuos.nombre AS Expr2, dbo.productores_residuos.porcentaje_carbon, dbo.productores_residuos.balance
+FROM     dbo.contrato INNER JOIN
+                  dbo.proceso ON dbo.contrato.contrato_id = dbo.proceso.contrato_id INNER JOIN
+                  dbo.desecho_movimientos ON dbo.proceso.proceso_id = dbo.desecho_movimientos.proceso_id INNER JOIN
+                  dbo.ubicaciones ON dbo.contrato.ubicacion_id = dbo.ubicaciones.ubicacion_id AND dbo.desecho_movimientos.ubicacion_id = dbo.ubicaciones.ubicacion_id INNER JOIN
+                  dbo.paises ON dbo.ubicaciones.pais_id = dbo.paises.pais_id INNER JOIN
+                  dbo.productores_residuos ON dbo.desecho_movimientos.productor_id = dbo.productores_residuos.productor_id AND dbo.ubicaciones.ubicacion_id = dbo.productores_residuos.ubicaicon_id
+				  Where dbo.contrato.contrato_id < 12
+GO
 
 
+--EXEC sp_rename 'contrato.descripcion', 'nombres', 'COLUMN';
+--select * from contrato
 
-/*select * from ventas
-select * from productos_producidos
-select* from recolectores;
-select* from actores_x_contrato;
-select* from actores;
 
-DBCC CHECKIDENT ('ventas', RESEED, 0);
-DELETE from ventas where venta_id>=0;
-UPDATE productos_producidos set cantidad =  50 where producto_id=2;
+-- select * from VistaContratoProceso;
+
+--EXEC sp_rename 'contrato.nombres', 'descripcion', 'COLUMN';
+
+/*
+ALTER TABLE contrato
+ALTER COLUMN descripcion NCHAR(10);
+
+ALTER TABLE contrato
+ALTER COLUMN descripcion VARCHAR(200);
+
+update contrato set descripcion = 'Contrato entre KFC y esencial verde where contrato_id' = 10;
+update contrato set descripcion = 'Contrato entre TacoBell y esencial verde' where contrato_id = 11;
+update contrato set descripcion = 'Contrato entre Barcelo y esencial verde' where contrato_id = 12;
 */
-
