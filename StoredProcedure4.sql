@@ -1,4 +1,4 @@
-USE caso3;
+USE prueba;
 GO
 
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'ProducirProductos')
@@ -55,7 +55,7 @@ END;
 GO
 
 -- Call the stored procedure to insert the data
-DECLARE @cantidad INT = 8;
+DECLARE @cantidad INT = 1;
 DECLARE @posttime DATETIME = '2023-05-20';
 DECLARE @user_id SMALLINT = 2;
 DECLARE @producto_id SMALLINT = 2;
