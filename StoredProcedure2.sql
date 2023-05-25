@@ -1,4 +1,4 @@
-USE caso3;
+USE prueba;
 GO
 
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'ProducirProductos')
@@ -29,7 +29,7 @@ BEGIN
     BEGIN TRY
         SET @CustomError = 2001;
         SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id and contrato_id = @contrato_id;
-        WAITFOR DELAY '00:00:02'
+        WAITFOR DELAY '00:00:08'
         UPDATE productos_producidos
         SET cantidad = @CantAct + @cantidad
         WHERE producto_id = @producto_id and contrato_id = @contrato_id;
@@ -77,9 +77,6 @@ pero la produccion de productos nuevos le suma a la cantidad previa a la venta. 
 el error de lost update*/
 
 /* Nueva Version
-La solucion de un lost update en este caso seria aplicar el isolation level
-serializable junto con UPDLOCK, HOLDLOCK en la tabla.
-
 GO
 
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'ProducirProductos')
@@ -104,15 +101,14 @@ BEGIN
     SET @InicieTransaccion = 0;
     IF @@TRANCOUNT = 0 BEGIN
         SET @InicieTransaccion = 1;
-        SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
         BEGIN TRANSACTION;
     END;
 
     BEGIN TRY
         SET @CustomError = 2001;
-        SELECT @CantAct = cantidad from productos_producidos WITH (UPDLOCK, HOLDLOCK) where producto_id = @producto_id and contrato_id = @contrato_id;
-        WAITFOR DELAY '00:00:02'
-        UPDATE productos_producidos
+        SELECT @CantAct = cantidad from productos_producidos WITH (UPDLOCK, ROWLOCK) where producto_id = @producto_id and contrato_id = @contrato_id;
+        WAITFOR DELAY '00:00:08'
+        UPDATE productos_producidos 
         SET cantidad = @CantAct + @cantidad
         WHERE producto_id = @producto_id and contrato_id = @contrato_id;
 
@@ -134,4 +130,14 @@ BEGIN
     END CATCH;
 END;
 GO
+
+-- Call the stored procedure to insert the data
+DECLARE @cantidad INT = 5;
+DECLARE @posttime DATETIME = '2023-05-20';
+DECLARE @user_id SMALLINT = 2;
+DECLARE @producto_id SMALLINT = 2;
+DECLARE @contrato_id SMALLINT = 10;
+
+EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_id;
+
 */

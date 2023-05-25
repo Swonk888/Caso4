@@ -1,13 +1,15 @@
-USE caso3;
+USE prueba;
 GO
 
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'VentasRango')
-    DROP PROCEDURE VentasRango;
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'cambioTipoCambio')
+    DROP PROCEDURE cambioTipoCambio;
 GO
 
-CREATE PROCEDURE VentasRango
+CREATE PROCEDURE cambioTipoCambio
     @RangoInicial DATETIME,
-    @RangoFinal DATETIME
+    @RangoFinal DATETIME,
+    @Moneda_id SMALLINT,
+    @Nuevo DECIMAL (10,2)
 AS
 BEGIN
     SET NOCOUNT ON; -- do not return metadata
@@ -25,16 +27,11 @@ BEGIN
 
     BEGIN TRY
         SET @CustomError = 2001;
-        SELECT *
-        FROM ventas 
-        WHERE fecha >= @RangoInicial and fecha <= @RangoFinal
-		
-        WAITFOR DELAY '00:00:04'
+        INSERT INTO tipo_cambio (fecha_inicio,fecha_final, moneda_id, [default], tipo_cambio, username, computer) values (@RangoInicial, @RangoFinal, @Moneda_id, 1, @nuevo, 'root', 'localhost');
+        UPDATE monedas 
+        SET tipo_cambio_actual = @Nuevo
+        WHERE monedas.moneda_id = @Moneda_id
 
-        SELECT sum(monto) as total, COUNT(*) AS cantidad_ventas
-        FROM ventas 
-        WHERE fecha >= @RangoInicial and fecha <= @RangoFinal
-		
         IF @InicieTransaccion = 1 BEGIN
             COMMIT;
         END;
@@ -55,85 +52,21 @@ END;
 GO
 
 -- Call the stored procedure to insert the data
-DECLARE @RangoInicial DATETIME = '2023-05-01';
+DECLARE @RangoInicial DATETIME = GETDATE();
 DECLARE @RangoFinal DATETIME = '2023-05-31';
+DECLARE @Moneda_id SMALLINT = 1;
+DECLARE @Nuevo DECIMAL (10,2) = 1.5;
 
-EXEC VentasRango @RangoInicial, @RangoFinal;
+EXEC cambioTipoCambio @RangoInicial, @RangoFinal, @Moneda_id, @Nuevo;
 
---select * from productos_producidos;
+--select * from tipo_cambio;
 --select * from ventas;
---delete from ventas where venta_id>0;
---DBCC CHECKIDENT(ventas, RESEED, 0);
+/*
+delete from  tipo_cambio where tipo_cambio_id>1;
+UPDATE monedas set tipo_cambio_actual = 1 where moneda_id = 1
+DBCC CHECKIDENT(tipo_cambio, RESEED, 1);
+*/
 --update productos_producidos set cantidad = 30 where producto_id = 2;
 
-/*Aqui ocurre un phantom read. Esto es porque la transaccion VentaRango
-lee las ventas y devuelve todas las ventas que ocurrieron en un mes dado, tambien
-sumando el monto ganado en dicho mes. Al mismo tiempo la transaccion de ventas inserta 
-una venta nueva que cumple con el rango de fechas, cambiando el resultado que 
-retorna VentaRango. La segunda vez que se corre VentaRango, se lee la nueva venta 
-creando un 'Phantom' en la segunda lectura*/
+/*Aqui ocurre un phantom read. La solucion está en el sp1 */
 
-/*Nueva version
-Aplicamos un isolation level serializable para eleminar el phantom
-
-GO
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'VentasRango')
-    DROP PROCEDURE VentasRango;
-GO
-
-CREATE PROCEDURE VentasRango
-    @RangoInicial DATETIME,
-    @RangoFinal DATETIME
-AS
-BEGIN
-    SET NOCOUNT ON; -- do not return metadata
-
-    DECLARE @ErrorNumber INT, @ErrorSeverity INT, @ErrorState INT, @CustomError INT;
-    DECLARE @Message VARCHAR(200);
-    DECLARE @InicieTransaccion BIT;
-	Declare @Total INT;
-
-    SET @InicieTransaccion = 0;
-    IF @@TRANCOUNT = 0 BEGIN
-        SET @InicieTransaccion = 1;
-        SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-        BEGIN TRANSACTION;
-    END;
-
-    BEGIN TRY
-        SET @CustomError = 2001;
-        SELECT *
-        FROM ventas 
-        WHERE fecha >= @RangoInicial and fecha <= @RangoFinal
-		
-        WAITFOR DELAY '00:00:04'
-
-        SELECT sum(monto) as total, COUNT(*) AS cantidad_ventas
-        FROM ventas 
-        WHERE fecha >= @RangoInicial and fecha <= @RangoFinal
-		
-        IF @InicieTransaccion = 1 BEGIN
-            COMMIT;
-        END;
-    END TRY
-    BEGIN CATCH
-        SET @ErrorNumber = ERROR_NUMBER();
-        SET @ErrorSeverity = ERROR_SEVERITY();
-        SET @ErrorState = ERROR_STATE();
-        SET @Message = ERROR_MESSAGE();
-
-        IF @InicieTransaccion = 1 BEGIN
-            ROLLBACK;
-        END;
-        RAISERROR('%s - Error Number: %i',
-            @ErrorSeverity, @ErrorState, @Message, @CustomError);
-    END CATCH;
-END;
-GO
-
--- Call the stored procedure to insert the data
-DECLARE @RangoInicial DATETIME = '2023-05-01';
-DECLARE @RangoFinal DATETIME = '2023-05-31';
-
-EXEC VentasRango @RangoInicial, @RangoFinal;
-*/
