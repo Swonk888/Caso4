@@ -183,6 +183,7 @@ DELETE from transacciones where transaccion_id>=0;
 DBCC CHECKIDENT ('ventas', RESEED, 0);
 DELETE from ventas where venta_id>=0;
 UPDATE productos_producidos set cantidad =  50 where producto_id=2;
+UPDATE productos_producidos set cantidad =  2 where producto_id=2;
 */
 
 

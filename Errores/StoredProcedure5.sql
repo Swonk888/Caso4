@@ -17,6 +17,7 @@ BEGIN
     DECLARE @Actor_id SMALLINT;
     DECLARE @Monto DECIMAL(10,2);
     DECLARE @Nombre VARCHAR(50);
+	DECLARE @Venta_id INT;
 
     SET @InicieTransaccion = 0
     IF @@TRANCOUNT = 0 BEGIN
@@ -46,7 +47,9 @@ BEGIN
             SET balance = 0.0
             WHERE actor_id = @Actor_id;
 
-            INSERT INTO transacciones (tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio) VALUES (1, 'Pago a actor', @Nombre, @Monto , GETDATE(), 1)
+			select @Venta_id = MAX(venta_id) from ventas;
+
+            INSERT INTO transacciones (tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio, venta_id) VALUES (1, 'Pago a actor', @Nombre, @Monto , GETDATE(), 1, @Venta_id)
             FETCH NEXT FROM actores_cursor INTO @Actor_id;
         END;
 
@@ -66,10 +69,7 @@ BEGIN
         UPDATE recolectores 
         SET balance = 0.0
         WHERE recolector_id = @Recolector_id
-        INSERT INTO transacciones (tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio) VALUES (1, 'Pago a recolector', @Nombre, @Monto , GETDATE(), 1)
-
-        
-
+        INSERT INTO transacciones (tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio, venta_id) VALUES (1, 'Pago a recolector', @Nombre, @Monto , GETDATE(), 1, @Venta_id)
         
         WAITFOR DELAY '00:00:05'
         
@@ -114,8 +114,6 @@ entre los SP no choquen, evitando los deadlocks.
 */
 
 /*Nueva Version
-
-use prueba;
 GO
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'RealizarPagos')
     DROP PROCEDURE RealizarPagos;
@@ -134,6 +132,7 @@ BEGIN
     DECLARE @Actor_id SMALLINT;
     DECLARE @Monto DECIMAL(10,2);
     DECLARE @Nombre VARCHAR(50);
+	DECLARE @Venta_id INT;
 
     SET @InicieTransaccion = 0
     IF @@TRANCOUNT = 0 BEGIN
@@ -153,10 +152,12 @@ BEGIN
         FROM recolectores r
         WHERE r.recolector_id= @Recolector_id
 
+		select @Venta_id = MAX(venta_id) from ventas;
+
         UPDATE recolectores 
         SET balance = 0.0
         WHERE recolector_id = @Recolector_id
-        INSERT INTO transacciones (tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio) VALUES (1, 'Pago a recolector', @Nombre, @Monto , GETDATE(), 1)
+        INSERT INTO transacciones (tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio, venta_id) VALUES (1, 'Pago a recolector', @Nombre, @Monto , GETDATE(), 1, @Venta_id)
 
         WAITFOR DELAY '00:00:05'
 
@@ -179,7 +180,7 @@ BEGIN
             SET balance = 0.0
             WHERE actor_id = @Actor_id;
 
-            INSERT INTO transacciones (tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio) VALUES (1, 'Pago a actor', @Nombre, @Monto , GETDATE(), 1)
+            INSERT INTO transacciones (tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio, venta_id) VALUES (1, 'Pago a actor', @Nombre, @Monto , GETDATE(), 1, @Venta_id)
             FETCH NEXT FROM actores_cursor INTO @Actor_id;
         END;
 

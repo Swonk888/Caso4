@@ -31,7 +31,7 @@ BEGIN
         UPDATE monedas 
         SET tipo_cambio_actual = @Nuevo
         WHERE monedas.moneda_id = @Moneda_id
-
+		WAITFOR DELAY '00:00:03'
         IF @InicieTransaccion = 1 BEGIN
             COMMIT;
         END;
@@ -55,7 +55,7 @@ GO
 DECLARE @RangoInicial DATETIME = GETDATE();
 DECLARE @RangoFinal DATETIME = '2023-05-31';
 DECLARE @Moneda_id SMALLINT = 1;
-DECLARE @Nuevo DECIMAL (10,2) = 1.6;
+DECLARE @Nuevo DECIMAL (10,2) = 1.5;
 
 EXEC cambioTipoCambio @RangoInicial, @RangoFinal, @Moneda_id, @Nuevo;
 

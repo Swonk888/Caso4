@@ -29,7 +29,7 @@ BEGIN
 
     BEGIN TRY
         SET @CustomError = 2001;
-		WAITFOR DELAY '00:00:05'
+		WAITFOR DELAY '00:00:08'
         SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id and contrato_id = @contrato_id;
         UPDATE productos_producidos
         SET cantidad = @CantAct + @cantidad
@@ -55,7 +55,7 @@ END;
 GO
 
 -- Call the stored procedure to insert the data
-DECLARE @cantidad INT = 1;
+DECLARE @cantidad INT = 5;
 DECLARE @posttime DATETIME = '2023-05-20';
 DECLARE @user_id SMALLINT = 2;
 DECLARE @producto_id SMALLINT = 2;
@@ -112,7 +112,7 @@ BEGIN
 
     BEGIN TRY
         SET @CustomError = 2001;
-		WAITFOR DELAY '00:00:05'
+		WAITFOR DELAY '00:00:08'
         SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id and contrato_id = @contrato_id;
         UPDATE productos_producidos
         SET cantidad = @CantAct + @cantidad

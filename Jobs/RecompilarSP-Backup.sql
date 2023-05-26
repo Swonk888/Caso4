@@ -65,3 +65,8 @@ WHERE nivel_id >= 0;
 
 DELETE FROM [KEVIN-CC].[caso3].[dbo].[tipo_objeto]
 WHERE tipo_objeto_id >= 0;
+
+/*
+select * from [KEVIN-CC].[caso3].[dbo].[evento_log]
+select * from [caso4].[dbo].[evento_log]
+*/
