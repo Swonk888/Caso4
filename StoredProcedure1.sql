@@ -1,4 +1,4 @@
-use prueba;
+use caso3;
 GO
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'InsertarVentas')
     DROP PROCEDURE InsertarVentas;
@@ -36,7 +36,6 @@ BEGIN
     SET @InicieTransaccion = 0
     IF @@TRANCOUNT = 0 BEGIN
         SET @InicieTransaccion = 1
-        SET TRANSACTION ISOLATION LEVEL READ COMMITTED
         BEGIN TRANSACTION
     END
 
@@ -163,7 +162,7 @@ DECLARE @misVentas AS VentasTVP;
 -- Rellenar la variable de tabla con los datos de venta
 INSERT INTO @misVentas (producto_id, cantidad, precioUnitario, fecha, moneda_id)
 VALUES
-    (2, 30, 510.12, GETDATE(), 1);
+    (2, 3, 510.12, GETDATE(), 1);
 
 -- Llamar al stored procedure para insertar las ventas
 EXEC InsertarVentas @ventasTVP = @misVentas;
@@ -188,7 +187,7 @@ UPDATE productos_producidos set cantidad =  50 where producto_id=2;
 /*Acá sucede un phanton con el sp3, pues este sp hace select al tipo de cambio actual de una moneda, y al momento de correr el sp3,
 este valor se está alterando en el valor actual de la moneda e insertantose en la tabla de tipo_cambio como un nuevo tipo de cambio.
 Esto al volver a hacer el select me va a dar un phantom read y los datos no son los correctos, esto se puede comprobar corriendo el select de transacciones
-La solución implementada es ponerle locks a cada tabla que no queremos que se vea afectada*/
+La solución implementada es snapshot a cada tabla que no queremos que se vea afectada*/
 
 /* Nueva versión
 use prueba;
@@ -229,7 +228,7 @@ BEGIN
     SET @InicieTransaccion = 0
     IF @@TRANCOUNT = 0 BEGIN
         SET @InicieTransaccion = 1
-        SET TRANSACTION ISOLATION LEVEL READ COMMITTED
+        SET TRANSACTION ISOLATION LEVEL SNAPSHOT; 
         BEGIN TRANSACTION
     END
 
@@ -237,9 +236,9 @@ BEGIN
         SET @CustomError = 2001
 
         SELECT @Tipo_cambio = m.tipo_cambio_actual, @Tipo_cambio_id = tc.tipo_cambio_id
-        FROM monedas m WITH (HOLDLOCK)
+        FROM monedas m 
         INNER JOIN @ventasTVP v ON m.moneda_id = v.moneda_id
-        INNER JOIN tipo_cambio tc WITH (HOLDLOCK) ON m.moneda_id = tc.moneda_id
+        INNER JOIN tipo_cambio tc ON m.moneda_id = tc.moneda_id
         WHERE tc.tipo_cambio = m.tipo_cambio_actual
 
         -- Insertar ventas
@@ -257,12 +256,12 @@ BEGIN
 
         
         SELECT @Monto = ((v.cantidad * v.precioUnitario * tc.tipo_Cambio - proceso.costo) * contrato.porcentaje), @Nombre = r.nombre
-        FROM recolectores r WITH (HOLDLOCK)
-        INNER JOIN contrato WITH (HOLDLOCK) ON contrato.recolector_id = r.recolector_id
-        INNER JOIN productos_producidos pp WITH (HOLDLOCK) ON pp.contrato_id = contrato.contrato_id
+        FROM recolectores r 
+        INNER JOIN contrato ON contrato.recolector_id = r.recolector_id
+        INNER JOIN productos_producidos pp ON pp.contrato_id = contrato.contrato_id
         INNER JOIN @ventasTVP v ON v.producto_id = pp.producto_id
-        INNER JOIN tipo_cambio tc WITH (HOLDLOCK) ON tc.tipo_cambio_id = @Tipo_cambio_id AND tc.moneda_id = v.moneda_id
-        INNER JOIN proceso WITH (HOLDLOCK) ON proceso.contrato_id = contrato.contrato_id
+        INNER JOIN tipo_cambio tc ON tc.tipo_cambio_id = @Tipo_cambio_id AND tc.moneda_id = v.moneda_id
+        INNER JOIN proceso ON proceso.contrato_id = contrato.contrato_id
         WHERE r.recolector_id = @Recolector_id;
 
         -- Actualizar balance en la tabla recolectores
@@ -282,8 +281,8 @@ BEGIN
 
         DECLARE actores_cursor CURSOR FOR
         SELECT ac.actor_id
-        FROM actores_x_contrato ac WITH (HOLDLOCK)
-        INNER JOIN actores a WITH (HOLDLOCK) ON ac.actor_id = a.actor_id
+        FROM actores_x_contrato ac 
+        INNER JOIN actores a  ON ac.actor_id = a.actor_id
         WHERE ac.contrato_id = @Contrato_id;
 
         OPEN actores_cursor;
@@ -356,7 +355,7 @@ DECLARE @misVentas AS VentasTVP;
 -- Rellenar la variable de tabla con los datos de venta
 INSERT INTO @misVentas (producto_id, cantidad, precioUnitario, fecha, moneda_id)
 VALUES
-    (2, 1, 510.12, GETDATE(), 1);
+    (2, 3, 510.12, GETDATE(), 1);
 
 -- Llamar al stored procedure para insertar las ventas
 EXEC InsertarVentas @ventasTVP = @misVentas;

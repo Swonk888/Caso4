@@ -1,4 +1,4 @@
-USE prueba;
+USE caso3;
 GO
 
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'ProducirProductos')
@@ -106,10 +106,9 @@ BEGIN
 
     BEGIN TRY
         SET @CustomError = 2001;
-        SELECT @CantAct = cantidad from productos_producidos WITH (UPDLOCK, ROWLOCK) where producto_id = @producto_id and contrato_id = @contrato_id;
         WAITFOR DELAY '00:00:08'
         UPDATE productos_producidos 
-        SET cantidad = @CantAct + @cantidad
+        SET cantidad = cantidad + @cantidad
         WHERE producto_id = @producto_id and contrato_id = @contrato_id;
 
         IF @InicieTransaccion = 1 BEGIN
