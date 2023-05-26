@@ -80,6 +80,7 @@ BEGIN
         INSERT INTO transacciones (venta_id, tipotran_id, descripcion,nombre, monto, fecha, tipo_cambio) VALUES (@Venta_id, 1, 'Aumento en balance a recolector',@Nombre, @Monto , GETDATE(), @Tipo_cambio)
 
         WAITFOR DELAY '00:00:05'
+
         SELECT @Tipo_cambio = m.tipo_cambio_actual, @Tipo_cambio_id = tc.tipo_cambio_id
         FROM monedas m 
         INNER JOIN @ventasTVP v ON m.moneda_id = v.moneda_id
@@ -273,12 +274,7 @@ BEGIN
         INSERT INTO transacciones (venta_id, tipotran_id, descripcion,nombre, monto, fecha, tipo_cambio) VALUES (@Venta_id, 1, 'Aumento en balance a recolector',@Nombre, @Monto , GETDATE(), @Tipo_cambio)
 
         WAITFOR DELAY '00:00:05'
-        SELECT @Tipo_cambio = m.tipo_cambio_actual, @Tipo_cambio_id = tc.tipo_cambio_id
-        FROM monedas m 
-        INNER JOIN @ventasTVP v ON m.moneda_id = v.moneda_id
-        INNER JOIN tipo_cambio tc ON m.moneda_id = tc.moneda_id
-        WHERE tc.tipo_cambio = m.tipo_cambio_actual
-
+        
         DECLARE actores_cursor CURSOR FOR
         SELECT ac.actor_id
         FROM actores_x_contrato ac 
