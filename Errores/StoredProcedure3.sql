@@ -55,7 +55,7 @@ GO
 DECLARE @RangoInicial DATETIME = GETDATE();
 DECLARE @RangoFinal DATETIME = '2023-05-31';
 DECLARE @Moneda_id SMALLINT = 1;
-DECLARE @Nuevo DECIMAL (10,2) = 1.5;
+DECLARE @Nuevo DECIMAL (10,2) = 1.6;
 
 EXEC cambioTipoCambio @RangoInicial, @RangoFinal, @Moneda_id, @Nuevo;
 
