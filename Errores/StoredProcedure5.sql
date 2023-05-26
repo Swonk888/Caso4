@@ -107,6 +107,10 @@ siguientemente quiere usar la tabla de actores_x_contrato pero
 tambien esta bloqueada. Ambos sp estan esperando a que el otro suelte
 el lock pero esto nunca va a pasar. Esto ocurre cuando ambas SP
 corren simultaneamente.
+
+La posibilidad del deadlock se reduce al cambiar el orden de las 
+instrucciones (updates y cursores) para que el pedido de locks 
+entre los SP no choquen, evitando los deadlocks.
 */
 
 /*Nueva Version

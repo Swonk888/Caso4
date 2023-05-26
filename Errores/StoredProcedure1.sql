@@ -112,7 +112,8 @@ BEGIN
             SET balance = @Monto
             FROM actores a
             WHERE a.actor_id = @Actor_id;
-            INSERT INTO transacciones (venta_id, tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio) VALUES (@Venta_id, 1, 'Aumento en balance a actor', @Nombre, @Monto , GETDATE(), @Tipo_cambio)
+            INSERT INTO transacciones (venta_id, tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio) 
+			VALUES (@Venta_id, 1, 'Aumento en balance a actor', @Nombre, @Monto , GETDATE(), @Tipo_cambio)
 
             FETCH NEXT FROM actores_cursor INTO @Actor_id;
         END;
@@ -185,13 +186,16 @@ UPDATE productos_producidos set cantidad =  50 where producto_id=2;
 */
 
 
-/*Acá sucede un phanton con el sp3, pues este sp hace select al tipo de cambio actual de una moneda, y al momento de correr el sp3,
+/*Acá sucede un phantom con el sp3, pues este sp hace select al tipo de cambio actual de una moneda, y al momento de correr el sp3,
 este valor se está alterando en el valor actual de la moneda e insertantose en la tabla de tipo_cambio como un nuevo tipo de cambio.
 Esto al volver a hacer el select me va a dar un phantom read y los datos no son los correctos, esto se puede comprobar corriendo el select de transacciones
-La solución implementada es snapshot a cada tabla que no queremos que se vea afectada*/
+
+La solucion se enfoca en reducir la cantidad de veces que se consulta a la table tipo_cambio para que los datos
+que se utilicen en el SP sean consistentes a traves del mismo si un dato nuevo se inserta,
+el SP o lo toma en cuenta 100% o no lo toma en cuenta del todo*/
 
 /* Nueva versión
-use prueba;
+
 GO
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'InsertarVentas')
     DROP PROCEDURE InsertarVentas;
@@ -300,7 +304,8 @@ BEGIN
             SET balance = @Monto
             FROM actores a
             WHERE a.actor_id = @Actor_id;
-            INSERT INTO transacciones (venta_id, tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio) VALUES (@Venta_id, 1, 'Aumento en balance a actor', @Nombre, @Monto , GETDATE(), @Tipo_cambio)
+            INSERT INTO transacciones (venta_id, tipotran_id, descripcion, nombre, monto, fecha, tipo_cambio) 
+			VALUES (@Venta_id, 1, 'Aumento en balance a actor', @Nombre, @Monto , GETDATE(), @Tipo_cambio)
 
             FETCH NEXT FROM actores_cursor INTO @Actor_id;
         END;

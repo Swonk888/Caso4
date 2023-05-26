@@ -23,14 +23,13 @@ BEGIN
     SET @InicieTransaccion = 0;
     IF @@TRANCOUNT = 0 BEGIN
         SET @InicieTransaccion = 1;
-        SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
         BEGIN TRANSACTION;
     END;
 
     BEGIN TRY
         SET @CustomError = 2001;
-		WAITFOR DELAY '00:00:05'
         SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id and contrato_id = @contrato_id;
+        WAITFOR DELAY '00:00:08'
         UPDATE productos_producidos
         SET cantidad = @CantAct + @cantidad
         WHERE producto_id = @producto_id and contrato_id = @contrato_id;
@@ -55,7 +54,7 @@ END;
 GO
 
 -- Call the stored procedure to insert the data
-DECLARE @cantidad INT = 1;
+DECLARE @cantidad INT = 5;
 DECLARE @posttime DATETIME = '2023-05-20';
 DECLARE @user_id SMALLINT = 2;
 DECLARE @producto_id SMALLINT = 2;
@@ -67,19 +66,21 @@ EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_i
 --select * from ventas;
 --delete from ventas where venta_id>0;
 --DBCC CHECKIDENT(ventas, RESEED, 0);
---update productos_producidos set cantidad = 2 where producto_id = 2;
+--update productos_producidos set cantidad = 30 where producto_id = 2;
 
+/* Puede ocurrir un lost update entre esta transaccion y la transaccion de registrar ventas.(sp1)
+Cuando registrar ventas actualiza la cantidad de productos en el inventario,
+la transaccion de agregar productos producidos puede estar sumando a dicha cantidad.
+El error ocurre cuando la creacion de productos le suma a la cantidad que hay en la base de datos,
+y al mismo tiempo ocurren una venta del mismo producto. La venta reduce la cantidad del producto 
+pero la produccion de productos nuevos le suma a la cantidad previa a la venta. Causando
+el error de lost update
 
-/* En este caso, corriendo este transaction simultaneamente con insertar ventas (sp1)
-cuando en insertar ventas ocurre un rollback por cualquier error, la transaccion 
-de agregar productos lee y utiliza los datos antes de que el rollback ocurra causando un 
-dirty read, donde no se toma en cuenta que insertar ventas realmente no ocurri�
-*/
+El lost update se corrije haciendo que el select de los datos que se usan se haga al mismo 
+tiempo que el update. Si una venta ocurre al mismo tiempo, no hay posibilidad de que el update
+de reducir cantidad se pierda*/
 
-/*Una solucion es aplicarle al codigo un set transaction
-isolation level read commited*/
-
-/*Nueva Version
+/* Nueva Version
 GO
 
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'ProducirProductos')
@@ -104,16 +105,14 @@ BEGIN
     SET @InicieTransaccion = 0;
     IF @@TRANCOUNT = 0 BEGIN
         SET @InicieTransaccion = 1;
-        SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
         BEGIN TRANSACTION;
     END;
 
     BEGIN TRY
         SET @CustomError = 2001;
-		WAITFOR DELAY '00:00:05'
-        SELECT @CantAct = cantidad from productos_producidos where producto_id = @producto_id and contrato_id = @contrato_id;
-        UPDATE productos_producidos
-        SET cantidad = @CantAct + @cantidad
+        WAITFOR DELAY '00:00:08'
+        UPDATE productos_producidos 
+        SET cantidad = cantidad + @cantidad
         WHERE producto_id = @producto_id and contrato_id = @contrato_id;
 
         IF @InicieTransaccion = 1 BEGIN
@@ -134,4 +133,14 @@ BEGIN
     END CATCH;
 END;
 GO
+
+-- Call the stored procedure to insert the data
+DECLARE @cantidad INT = 5;
+DECLARE @posttime DATETIME = '2023-05-20';
+DECLARE @user_id SMALLINT = 2;
+DECLARE @producto_id SMALLINT = 2;
+DECLARE @contrato_id SMALLINT = 10;
+
+EXEC ProducirProductos @cantidad, @posttime, @user_id, @producto_id, @contrato_id;
+
 */

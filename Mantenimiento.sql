@@ -124,7 +124,7 @@ sp_HelpText InsertarVentas;
 
 Go
 
---b) Schemahowbinding
+--b) Schemabinding
 
 IF OBJECT_ID('dbo.VistaContratoProceso', 'V') IS NOT NULL
     DROP VIEW dbo.VistaContratoProceso;
