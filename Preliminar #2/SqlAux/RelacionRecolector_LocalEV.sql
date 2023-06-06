@@ -6,4 +6,3 @@ rt.nombre,
 r.ev_id
 ORDER BY
 r.ev_id
-
