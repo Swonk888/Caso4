@@ -1,0 +1,1 @@
+select productor_id, nombre from productores_residuos;
