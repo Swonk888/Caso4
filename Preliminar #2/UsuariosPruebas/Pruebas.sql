@@ -70,4 +70,16 @@ select * from contrato;
 select contrato_id, recolector_id, ubicacion_id, porcentaje from contrato;
 
 --d) Prioridades de Permisos
+--UsuarioD - sysadmin como role de servidor y deny en rol de base de datos
+select * from local_ev;
 
+--UsuarioD2
+CREATE ROLE DenyAccess;
+DENY SELECT ON actores TO DenyAccess;
+GRANT SELECT ON local_ev TO DenyAccess;
+GRANT SELECT ON recolectores TO DenyAccess;
+ALTER ROLE DenyAccess ADD MEMBER UserD2;
+
+select * from local_ev;
+select * from actores;
+select * from recolectores;

@@ -5,20 +5,12 @@ BACKUP DATABASE caso3
 TO DISK = 'C:\Users\KEVIN CHANG\Desktop\TEC\Base de Datos I\Entregas\Caso #4\Caso4\Preliminar #2\Backup\full.bak'
 WITH INIT;
 
+insert into local_ev (telefono, ubicacion_id) values (12345, 1);
+select * from local_ev;
+
 --Incremental
 BACKUP DATABASE caso3
 TO DISK = 'C:\Users\KEVIN CHANG\Desktop\TEC\Base de Datos I\Entregas\Caso #4\Caso4\Preliminar #2\Backup\incremental.bak'
 WITH DIFFERENTIAL;
 
---Restore
-
---Full
-RESTORE DATABASE caso3
-FROM DISK = 'C:\Users\KEVIN CHANG\Desktop\TEC\Base de Datos I\Entregas\Caso #4\Caso4\Preliminar #2\Backup\full.bak'
-WITH REPLACE, NORECOVERY;
-
-
---Incremental
-RESTORE DATABASE caso3
-FROM DISK = 'C:\Users\KEVIN CHANG\Desktop\TEC\Base de Datos I\Entregas\Caso #4\Caso4\Preliminar #2\Backup\incremental.bak'
-WITH RECOVERY;
+select * from local_ev
