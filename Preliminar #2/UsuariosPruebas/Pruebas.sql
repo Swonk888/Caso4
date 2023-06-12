@@ -22,6 +22,7 @@ DECLARE @Nuevo DECIMAL (10,2) = 2.0;
 EXEC cambioTipoCambio @RangoInicial, @RangoFinal, @Moneda_id, @Nuevo;
 
 --b) Restringe visibilidad de columnas
+/*
 DENY SELECT (porcentaje) on contrato TO UserB;
 DENY SELECT (checksum) on evento_log TO UserB;
 DENY SELECT (computer) on evento_log TO UserB;
@@ -29,6 +30,7 @@ DENY SELECT (computer) on evento_log TO UserB;
 DENY SELECT (monto) on transacciones TO UserB2;
 DENY SELECT (fecha) on ventas TO UserB2;
 DENY SELECT (computer) on evento_log TO UserB2;
+*/
 
 select * from contrato;
 select * from ventas;
@@ -44,25 +46,29 @@ select venta_id, producto_id, monto, cantidad from ventas;
 
 
 --c) Crear roles, diferentes usuarios con difetentes roles y diferentes permisos
---ALTER ROLE RolSoloSP DROP MEMBER UserC;
---DROP ROLE RolSoloSP;
+/*
+ALTER ROLE RolSoloSP DROP MEMBER UserC;
+DROP ROLE RolSoloSP;
 CREATE ROLE RolSoloSP;
 Grant EXECUTE TO RolSoloSP;
 DENY SELECT, INSERT, UPDATE, DELETE ON schema::caso3 TO RolSoloSP;
 ALTER ROLE RolSoloSP ADD MEMBER UserC;
+*/
 
 select * from contrato;
 insert into local_ev (telefono, ubicacion_id) values (24097689, 1);
 update productos_producidos set cantidad = 21 where producto_id = 2
 exec showContractData 11;
 
---ALTER ROLE RestriccionContrato DROP MEMBER UserC2;
---DROP ROLE RestriccionContrato;
+/*
+ALTER ROLE RestriccionContrato DROP MEMBER UserC2;
+DROP ROLE RestriccionContrato;
 CREATE ROLE RestriccionContrato;
 GRANT SELECT ON ventas TO RestriccionContrato;
 GRANT SELECT ON contrato TO RestriccionContrato;
 DENY SELECT (descripcion) ON contrato TO RestriccionContrato;
 ALTER ROLE RestriccionContrato ADD MEMBER UserC2;
+*/
 
 select * from ventas;
 select * from recolectores;
@@ -74,11 +80,13 @@ select contrato_id, recolector_id, ubicacion_id, porcentaje from contrato;
 select * from local_ev;
 
 --UsuarioD2
+/*
 CREATE ROLE DenyAccess;
 DENY SELECT ON actores TO DenyAccess;
 GRANT SELECT ON local_ev TO DenyAccess;
 GRANT SELECT ON recolectores TO DenyAccess;
 ALTER ROLE DenyAccess ADD MEMBER UserD2;
+*/
 
 select * from local_ev;
 select * from actores;
